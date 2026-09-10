@@ -291,7 +291,7 @@
     const lines = rawLines.filter(line => line.trim());
     const parsed = [];
     function cleanName(name) {
-      return String(name || "").replace(/\s+$/g, "").replace(/^\s+/, "").replace(/^[-*+]\s+/, "").replace(/^\d+[.)]\s+/, "").replace(/^📁\s*/u, "").replace(/^📄\s*/u, "").replace(/^\*\*(.*?)\*\*$/, "$1").replace(/\s+$/g, "").trim();
+      return String(name || "").replace(/\s+$/g, "").replace(/^\s+/, "").replace(/^[-*+]{1,}\s+/, "").replace(/^\d+[.)]\s+/, "").replace(/^📁\s*/u, "").replace(/^📄\s*/u, "").replace(/^\*\*(.*?)\*\*$/, "$1").replace(/\s+$/g, "").trim();
     }
     function asciiDepth(prefix) {
       return (prefix.replace(/\t/g, "    ").match(/(?:│   |\|   |    )/g) || []).length + 1;
@@ -311,7 +311,7 @@
         }
       }
       name = cleanName(name).replace(/\/$/, "");
-      if (!name || /^(comments index|project structure|file structure|tree|structure)$/i.test(name) || /^[-_=]{3,}$/.test(name)) return;
+      if (!name || /^(comments index|project structure|file structure|tree|structure)$/i.test(name) || /^[-_=]{3,}$/.test(name) || /^[│|├└\s\-_+`\.]+$/.test(name)) return;
       const type = /\.(?:[a-z0-9]{1,16})(?:\?.*)?$/i.test(name) || /^(package-lock\.json|pnpm-lock\.yaml|yarn\.lock|dockerfile|makefile)$/i.test(name) ? "file" : "folder";
       parsed.push({ name, type, depth });
     });

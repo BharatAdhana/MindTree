@@ -134,6 +134,11 @@ textarea:focus{border-color:#8179ed;box-shadow:0 0 0 3px #eeedff}
 
 .section-title-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:14px 0 7px}
 .section-title-row label{margin:0}
+.hover-children-overlay{position:absolute;top:15px;left:15px;background:rgba(255,255,255,0.95);border:1px solid #e4e5e9;border-radius:8px;padding:10px 14px;box-shadow:0 4px 15px rgba(0,0,0,0.1);z-index:1000;pointer-events:auto;font-size:12px;color:#333;max-width:250px;max-height:calc(100vh - 40px);display:flex;flex-direction:column;gap:5px;overflow-y:auto;}
+.hover-children-title{font-weight:700;color:#5f57df;border-bottom:1px solid #eeedff;padding-bottom:4px;margin-bottom:2px;flex-shrink:0;}
+.hover-children-list{display:flex;flex-direction:column;gap:3px;overflow-y:auto;}
+.hover-children-item{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;padding:3px 6px;border-radius:4px;}
+.hover-children-item:hover{background:#f0f0f4;}
 .code-status{font-size:10px;color:#7b7e86}
 .code-editor{width:100%;height:300px;min-height:220px;resize:vertical;border:1px solid #dfe0e5;border-radius:9px;padding:12px;outline:0;line-height:1.5;font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;background:#fafafa;tab-size:2;white-space:pre;overflow:auto}
 .code-editor:focus{border-color:#8179ed;box-shadow:0 0 0 3px #eeedff;background:#fff}
@@ -276,6 +281,7 @@ textarea:focus{border-color:#8179ed;box-shadow:0 0 0 3px #eeedff}
 </aside>
 <button id="railLogo" class="rail-logo" title="Open MindTree sidebar" aria-label="Open MindTree sidebar"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 7.5 12 12m0 0 5-4.5M12 12v5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="7" cy="7" r="2.5" fill="currentColor"/><circle cx="17" cy="7" r="2.5" fill="currentColor"/><circle cx="12" cy="17" r="2.5" fill="currentColor"/><circle cx="12" cy="12" r="2.2" fill="#C9C4FF"/></svg></button>
 <div class="workspace">
+  <div id="hoverChildrenOverlay" class="hover-children-overlay" style="display:none"></div>
   <div id="canvas" class="canvas">
     <div id="board" class="board">
       <svg id="connections" class="connections"></svg>
@@ -757,8 +763,24 @@ function pathOf(n){
   while(p && m[p]){a.unshift(m[p].name);p=m[p].parent}
   return a.join("/");
 }
-function defaultColor(n){
-  if(n.id==="__project_root__") return "#292b31";
+const PASTEL_PALETTE = [
+  "#fff4d6", "#f3eaff", "#e9f4ff", "#e0f6e1", 
+  "#ffe2d5", "#d6f5f5", "#fbe0f3", "#f2f2f7", "#ffeccc"
+];
+
+function defaultColor(n, nodeMap) {
+  if(n.id==="__project_root__" || n.type === "root") return "#292b31";
+  
+  if (n.parent && nodeMap) {
+    const parentNode = nodeMap[n.parent];
+    if (parentNode && parentNode.children) {
+      const idx = parentNode.children.indexOf(n.id);
+      if (idx !== -1) {
+        return PASTEL_PALETTE[idx % PASTEL_PALETTE.length];
+      }
+    }
+  }
+
   if(n.type==="folder") return "#fff4d6";
   if(/\.(?:ts|tsx|js|jsx|mjs|cjs|py|java|cs|go|rs|php|rb|swift|vue|svelte)$/i.test(n.name)) return "#f3eaff";
   return "#e9f4ff";
@@ -1262,9 +1284,9 @@ function render(){
     const isSearchCurrent = isSearching && searchResults[searchIndex]?.id === id;
     let cardClass = "node-card "+n.type+(n.type==="file"&&/\.(?:ts|tsx|js|jsx|mjs|cjs|py|java|cs|go|rs|php|rb|swift|vue|svelte)$/i.test(n.name)?" code-file":"")+(state.roots.includes(id)?" root":"")+(selected===id || selectedGroup.has(id) ? " selected" : "")+(linkMode&&linkSource===id?" link-source":"")+(linkMode&&linkDrag?.target===id&&linkSource!==id?" link-target":"");
     if (isSearchMatch) cardClass += (isSearchCurrent ? " search-current" : " search-match");
-    const selfColor = state.colors[id]||defaultColor(n);
+    const selfColor = state.colors[id]||defaultColor(n, m);
     if (n.parent && m[n.parent]) {
-      const parentColor = state.colors[n.parent] || defaultColor(m[n.parent]);
+      const parentColor = state.colors[n.parent] || defaultColor(m[n.parent], m);
       if (selfColor === parentColor) cardClass += " child-variant";
     }
     card.className = cardClass;
@@ -1273,6 +1295,8 @@ function render(){
       card.style.color = state.textColors[id];
     }
     card.dataset.id=id;
+    card.onmouseenter = () => showChildrenHover(id);
+    card.onmouseleave = () => hideChildrenHover();
     card.title=n.name;
     card.setAttribute("aria-label",n.name);
     const note=state.comments[id]?'<span class="node-note" title="Has comment"></span>':"";
@@ -1417,37 +1441,70 @@ function render(){
       }).join('');
       if (breadcrumbsEl.scrollWidth > breadcrumbsEl.clientWidth) {
         breadcrumbsEl.innerHTML = `
-          <div style="position:relative; display:inline-block; font-size:12px;">
+          <div style="position:static; display:inline-block; font-size:12px;">
             <button class="breadcrumb-item breadcrumb-dropdown-toggle" style="background:transparent;border:none;font:inherit;cursor:pointer;color:#5f57df;padding:2px 4px;">
               [ ${esc(pathNodes[0].name)} / ... / ${esc(pathNodes[pathNodes.length-1].name)} ▼ ]
             </button>
-            <div class="breadcrumb-dropdown-menu" style="display:none; position:absolute; top:100%; left:0; background:#fff; border:1px solid #d9d5ff; border-radius:6px; padding:4px; box-shadow:0 8px 22px rgba(74,65,180,.15); z-index:1000; max-height:400px; overflow-y:auto; min-width:240px; text-align:left;">
-              ${pathNodes.map((n, i) => {
-                const clickable = n.id !== ROOT_ID ? ` data-bc-id="${n.id}"` : '';
-                return `<div class="breadcrumb-item"${clickable} style="display:block; padding:6px 10px; margin-bottom:2px; padding-left:${i*10 + 6}px">${i>0?'└ ':''}${esc(n.name)}</div>`;
-              }).join('')}
-            </div>
           </div>
         `;
+        const menu = document.createElement("div");
+        menu.className = "breadcrumb-dropdown-menu";
+        menu.style.cssText = "display:none; position:fixed; background:#fff; border:1px solid #d9d5ff; border-radius:6px; padding:4px; box-shadow:0 8px 22px rgba(74,65,180,.15); z-index:10000; max-height:400px; overflow-y:auto; min-width:240px; text-align:left;";
+        menu.innerHTML = pathNodes.map((n, i) => {
+          const clickable = n.id !== ROOT_ID ? ` data-bc-id="${n.id}"` : '';
+          return `<div class="breadcrumb-item"${clickable} style="display:block; padding:6px 10px; margin-bottom:2px; padding-left:${i*10 + 6}px">${i>0?'└ ':''}${esc(n.name)}</div>`;
+        }).join('');
+        document.body.appendChild(menu);
+
         const toggle = breadcrumbsEl.querySelector('.breadcrumb-dropdown-toggle');
-        const menu = breadcrumbsEl.querySelector('.breadcrumb-dropdown-menu');
         toggle.onclick = (e) => {
           e.stopPropagation();
-          menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
-        };
-        document.addEventListener('click', () => { if (menu) menu.style.display = 'none'; }, { once: true });
-      }
-      breadcrumbsEl.querySelectorAll('.breadcrumb-item[data-bc-id]').forEach(el => {
-        el.onclick = (e) => {
-          e.stopPropagation();
-          const id = el.dataset.bcId;
-          const result = MindTreeState.revealPath(state, id);
-          if (isSearching) {
-            result.revealed.forEach(rid => searchOriginalCollapse.add(rid));
+          if (menu.style.display === 'none') {
+            const rect = toggle.getBoundingClientRect();
+            menu.style.top = rect.bottom + 'px';
+            menu.style.left = rect.left + 'px';
+            menu.style.display = 'block';
+          } else {
+            menu.style.display = 'none';
           }
-          selectNode(id);
         };
-      });
+        const closeMenu = () => { if (menu) menu.style.display = 'none'; };
+        document.addEventListener('click', closeMenu);
+        
+        const originalRender = window._cleanupBcMenu;
+        if (originalRender) originalRender();
+        window._cleanupBcMenu = () => {
+          menu.remove();
+          document.removeEventListener('click', closeMenu);
+        };
+
+        menu.querySelectorAll('.breadcrumb-item[data-bc-id]').forEach(el => {
+          el.onclick = (e) => {
+            e.stopPropagation();
+            const id = el.dataset.bcId;
+            const result = MindTreeState.revealPath(state, id);
+            if (isSearching) {
+              result.revealed.forEach(rid => searchOriginalCollapse.add(rid));
+            }
+            selectNode(id);
+            focusNode(id);
+            closeMenu();
+          };
+        });
+      } else {
+        breadcrumbsEl.querySelectorAll('.breadcrumb-item[data-bc-id]').forEach(el => {
+          el.onclick = (e) => {
+            e.stopPropagation();
+            const id = el.dataset.bcId;
+            const result = MindTreeState.revealPath(state, id);
+            if (isSearching) {
+              result.revealed.forEach(rid => searchOriginalCollapse.add(rid));
+            }
+            selectNode(id);
+            focusNode(id);
+          };
+        });
+      }
     } else {
       breadcrumbsEl.innerHTML = "";
     }
@@ -1558,6 +1615,55 @@ function positionContext(positions){
     if(ctx) { ctx.style.left = "50%"; ctx.style.top = "50%"; ctx.classList.add("show"); }
   }
 }
+let hoverTimeout = null;
+function showChildrenHover(id) {
+  clearTimeout(hoverTimeout);
+  const n = map()[id];
+  const overlay = document.getElementById("hoverChildrenOverlay");
+  if (!n || !n.children || n.children.length === 0) {
+    overlay.style.display = "none";
+    return;
+  }
+  const kids = n.children.map(cid => map()[cid]).filter(Boolean);
+  if (kids.length === 0) {
+    overlay.style.display = "none";
+    return;
+  }
+  
+  const listHtml = kids.map(k => `<div class="hover-children-item" title="${k.name}" data-id="${k.id}">${k.name}</div>`).join('');
+  
+  overlay.innerHTML = `
+    <div class="hover-children-title">Children of ${n.name} (${kids.length})</div>
+    <div class="hover-children-list">${listHtml}</div>
+  `;
+  overlay.style.display = "flex";
+  
+  overlay.onmouseenter = () => clearTimeout(hoverTimeout);
+  overlay.onmouseleave = () => hideChildrenHover();
+  
+  overlay.querySelectorAll('.hover-children-item').forEach(el => {
+    el.onclick = () => {
+      const targetId = el.dataset.id;
+      MindTreeState.revealPath(state, targetId).revealed.forEach(rid => {
+        state.collapsed[rid] = false;
+      });
+      persist();
+      render();
+      setTimeout(() => {
+        selectNode(targetId);
+        focusNode(targetId);
+        hideChildrenHover();
+      }, 50);
+    };
+  });
+}
+
+function hideChildrenHover() {
+  hoverTimeout = setTimeout(() => {
+    document.getElementById("hoverChildrenOverlay").style.display = "none";
+  }, 150);
+}
+
 function showContext(){const positions=layout();positionContext(positions)}
 function positionConnectionEditor(positions){
   const editor=document.getElementById("connectionEditor");
