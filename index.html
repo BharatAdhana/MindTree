@@ -261,6 +261,11 @@ textarea:focus{border-color:#8179ed;box-shadow:0 0 0 3px #eeedff}
   <div class="group" aria-label="Selected file actions"><span class="group-label">File</span>
     <button class="tool" id="codeTop" title="Open file code"><svg class="tool-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 9-3 3 3 3M16 9l3 3-3 3M14 5l-4 14"/></svg><span class="label">Code</span></button>
   </div>
+  <div class="sep"></div>
+  <div class="group" aria-label="View actions"><span class="group-label">View</span>
+    <button class="tool" id="expandAllTop" title="Expand all folders" onclick="expandAll(true)"><svg class="tool-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="label">Expand All</span></button>
+    <button class="tool" id="collapseAllTop" title="Collapse all folders" onclick="expandAll(false)"><svg class="tool-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M10 14l-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="label">Collapse All</span></button>
+  </div>
   <div class="topbar-section">
     <button class="tool" id="importTop" title="Import a project structure"><svg class="tool-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11m0 0-4-4m4 4 4-4M5 16v2.4A2.6 2.6 0 0 0 7.6 21h8.8a2.6 2.6 0 0 0 2.6-2.6V16"/></svg><span class="label">Import</span></button>
   </div>
@@ -455,7 +460,7 @@ project/
       <span><strong style="color:var(--text)">Esc</strong> Cancel</span>
     </div>
   </div>
-<div id="relationshipDialog" class="node-dialog parent-picker-dialog" style="max-width:400px; padding:0; display:none;">
+<div id="relationshipDialog" class="node-dialog parent-picker-dialog" style="max-width:400px; padding:0;">
   <div style="padding:16px 16px 8px 16px; border-bottom:1px solid var(--border);">
     <div class="dialog-title" style="margin-bottom:8px; font-size:13px; color:var(--text-muted)">Create Relationship from "<span id="relSourceTargetName" style="color:var(--text); font-weight:600;"></span>"</div>
     
@@ -494,45 +499,7 @@ project/
     <button id="confirmRelBtn" class="primary">Create</button>
   </div>
 </div>
-<div id="relationshipDialog" class="node-dialog parent-picker-dialog" style="max-width:400px; padding:0; display:none;">
-  <div style="padding:16px 16px 8px 16px; border-bottom:1px solid var(--border);">
-    <div class="dialog-title" style="margin-bottom:8px; font-size:13px; color:var(--text-muted)">Create Relationship from "<span id="relSourceTargetName" style="color:var(--text); font-weight:600;"></span>"</div>
-    
-    <div style="margin-bottom: 8px;">
-      <label style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 4px;">Relationship Type</label>
-      <select id="relTypeSelect" class="dialog-select" style="width: 100%; box-sizing: border-box; margin-bottom: 8px;">
-        <option value="depends on">depends on</option>
-        <option value="uses">uses</option>
-        <option value="contains">contains</option>
-        <option value="references">references</option>
-        <option value="creates">creates</option>
-        <option value="belongs to">belongs to</option>
-        <option value="requires">requires</option>
-        <option value="produces">produces</option>
-        <option value="consumes">consumes</option>
-        <option value="duplicates">duplicates</option>
-        <option value="replaces">replaces</option>
-        <option value="custom">custom (untyped)</option>
-      </select>
-    </div>
-    
-    <div style="margin-bottom: 8px;">
-      <label style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 4px;">To (Target Node)</label>
-      <input id="relTargetSearch" class="dialog-input" placeholder="Search for target node..." autocomplete="off" style="width:100%; box-sizing:border-box; margin-bottom: 4px;">
-      <div id="relTargetResults" class="parent-picker-results" style="max-height:140px; overflow-y:auto; padding:0; border: 1px solid var(--border); border-radius: 6px; display: none;"></div>
-    </div>
-    
-    <div style="margin-bottom: 8px;">
-      <label style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 4px;">Label (Optional)</label>
-      <input id="relLabelInput" class="dialog-input" placeholder="Custom description..." autocomplete="off" style="width:100%; box-sizing:border-box;">
-    </div>
-  </div>
-  
-  <div style="padding:10px 16px; display:flex; justify-content: flex-end; gap: 8px; background:var(--bg-hover); border-radius: 0 0 12px 12px;">
-    <button id="cancelRelBtn">Cancel</button>
-    <button id="confirmRelBtn" class="primary">Create</button>
-  </div>
-</div>
+
   <div id="projectOverlay" class="overlay"></div>
   <div id="projectDialog" class="node-dialog">
     <div class="dialog-title">Create mindtree project</div>
@@ -801,7 +768,7 @@ function toggleFolder(id){
   state.collapsed[id]=!state.collapsed[id];
   persist();render();showContext();
   // Keep the branch and its immediate parent in view after expanding or collapsing.
-  requestAnimationFrame(()=>focusNode(n.parent&&node(n.parent)?n.parent:id));
+  requestAnimationFrame(()=>focusNode(id));
 }
 function isDescendantOf(id,ancestorId){
   const m=map(); let current=m[id];
@@ -1511,10 +1478,6 @@ function render(){
   }
 }
 function focusNode(id){
-  if (id === "__project_root__" && state.roots) {
-    const realRoot = state.roots.find(r => r !== "__project_root__");
-    if (realRoot) id = realRoot;
-  }
   const positions=layout();
   const p=positions[id];
   if(!p)return;
@@ -1825,14 +1788,10 @@ function renderRelResults(query = "") {
   const container = document.getElementById("relTargetResults");
   if(!container) return;
   container.innerHTML = "";
-  if (!query && !relTargetId) {
-    container.style.display = "none";
-    return;
-  }
+  
   container.style.display = "block";
   const filtered = relValidTargets.filter(c => 
-    c.name.toLowerCase().includes(query.toLowerCase()) || 
-    pathOf(c).toLowerCase().includes(query.toLowerCase())
+    c.name.toLowerCase().includes(query.toLowerCase())
   );
   if (!filtered.length) {
     container.innerHTML = `<div style="padding: 12px; color: var(--text-muted); font-size: 13px; text-align: center;">No matches found</div>`;
@@ -1970,7 +1929,12 @@ document.getElementById("cancelRelBtn").onclick = closeRelationshipModal;
 document.getElementById("confirmRelBtn").onclick = createRelationship;
 document.getElementById("createRelationshipBtn").onclick = () => window.openCreateRelationshipModal(selected);
 
-function closeDialog(){document.getElementById("overlay").classList.remove("show");document.getElementById("dialog").classList.remove("show")}
+function closeDialog(){
+  document.getElementById("overlay").classList.remove("show");
+  document.getElementById("dialog")?.classList.remove("show");
+  document.getElementById("parentPickerDialog")?.classList.remove("show");
+  document.getElementById("relationshipDialog")?.classList.remove("show");
+}
 function addNode(){
   const name=document.getElementById("newName").value.trim();
   if(!name)return toast("Enter a node name");
@@ -2186,7 +2150,7 @@ function search(){
   searchIndex = -1;
   
   state.nodes.forEach(n=>{
-    if(n.id !== ROOT_ID && (n.name.toLowerCase().includes(q) || pathOf(n).toLowerCase().includes(q))){
+    if(n.id !== ROOT_ID && n.name.toLowerCase().includes(q)){
       searchResults.push(n);
     }
   });
@@ -2671,8 +2635,7 @@ function renderPPResults(query = "") {
   if(!container) return;
   container.innerHTML = "";
   const filtered = ppValidParents.filter(c => 
-    c.name.toLowerCase().includes(query.toLowerCase()) || 
-    pathOf(c).toLowerCase().includes(query.toLowerCase())
+    c.name.toLowerCase().includes(query.toLowerCase())
   );
   if (!filtered.length) {
     container.innerHTML = `<div style="padding: 12px; color: var(--text-muted); font-size: 13px; text-align: center;">No matches found</div>`;
