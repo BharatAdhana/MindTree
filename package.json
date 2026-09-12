@@ -12,7 +12,7 @@
     "vite": "^6.0.0"
   },
   "bin": {
-    "mindtree": "./bin/mindtree.js"
+    "mindtree": "bin/mindtree.js"
   },
   "files": [
     "dist",
