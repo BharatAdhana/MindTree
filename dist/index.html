@@ -773,10 +773,18 @@ function refreshPaths(){
   MindTreeState.rebuildPaths(state.nodes,state.roots[0]||MindTreeState.ROOT_ID);
 }
 function updateBoardTransform(){document.getElementById("board").style.transform=`translate(${panX}px,${panY}px) scale(${zoom})`;document.getElementById("canvas").style.backgroundPosition=`${panX}px ${panY}px`;} function setZoom(value){
+  const canvas = document.getElementById("canvas");
+  const centerX = (canvas.scrollLeft + canvas.clientWidth / 2) / zoom;
+  const centerY = (canvas.scrollTop + canvas.clientHeight / 2) / zoom;
+  
   zoom=Math.min(2.5,Math.max(.35,value));
   document.getElementById("board").style.transform=""; document.getElementById("board").style.zoom=zoom;
-  // background position handled by native scrolling
+  
+  canvas.scrollLeft = (centerX * zoom) - (canvas.clientWidth / 2);
+  canvas.scrollTop = (centerY * zoom) - (canvas.clientHeight / 2);
+  
   document.getElementById("zoomReadout").textContent=Math.round(zoom*100)+"%";
+  if(contextVisible) showContext();
 }
 function changeZoom(delta){setZoom(zoom+delta)}
 function toggleFolder(id){
