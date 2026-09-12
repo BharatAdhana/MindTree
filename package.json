@@ -1,7 +1,6 @@
 {
   "name": "project-mind-graph",
   "version": "1.0.0",
-  "private": true,
   "description": "Interactive project structure mind graph",
   "scripts": {
     "dev": "vite --host",
@@ -12,7 +11,13 @@
   "devDependencies": {
     "vite": "^6.0.0"
   },
-  "dependencies": {
-    "puppeteer": "^24.43.1"
-  }
+  "bin": {
+    "mindtree": "./bin/mindtree.js"
+  },
+  "files": [
+    "dist",
+    "bin"
+  ],
+  "license": "SEE LICENSE IN LICENSE",
+  "author": "Bharat Adhana"
 }

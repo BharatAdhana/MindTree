@@ -1,4 +1,5 @@
 # MindTree
+
 MindTree is a beautiful, modern, and sleek Mind-Mapping tool designed to run completely inside the browser. It features a completely dynamic canvas, glassmorphic UI elements, tree layout mapping algorithms, and custom project management tools.
 
 ## Features
@@ -9,8 +10,46 @@ MindTree is a beautiful, modern, and sleek Mind-Mapping tool designed to run com
 - Cross-linked connections and stickies
 - Client-side data persistence via LocalStorage
 
-## Setup
-Simply run `npm run dev` to start a local Vite development server, or build with `npm run build` to host statically anywhere.
+## Quick Start (NPM)
 
-## Open Source
-Enjoy using MindTree for all your brainstorming and structuring needs!
+You can launch MindTree locally instantly without installing anything:
+
+```bash
+npx project-mind-graph
+```
+
+Or you can install it globally to run anywhere:
+
+```bash
+npm install -g project-mind-graph
+mindtree
+```
+
+## Setup (Local Development)
+
+To develop locally:
+
+```bash
+git clone https://github.com/BharatAdhana/MindTree.git
+cd MindTree
+npm install
+npm run dev
+```
+
+Build for production:
+```bash
+npm run build
+```
+
+## GitHub
+
+Star or fork the project on GitHub:
+https://github.com/BharatAdhana/MindTree
+
+## License
+
+MindTree is free for personal and non-commercial use.
+
+Commercial use requires a separate commercial license. If you want to use MindTree commercially, please contact Bharat Adhana for commercial licensing.
+
+This project is intentionally being made available free for individuals and non-commercial users.
