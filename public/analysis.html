@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MindTree · Codebase explorer</title>
+  <link rel="stylesheet" href="/analysis.css">
+  <script src="/analysis-model.js" defer></script><script src="/analysis.js" defer></script>
+</head>
+<body>
+  <header>
+    <div class="brand"><span class="logo" aria-hidden="true">⌘</span><div><strong>MindTree</strong><span>Codebase explorer</span></div></div>
+    <div class="project"><strong id="projectName">Loading project…</strong><span id="summary"></span></div>
+    <button id="download" disabled>Export graph</button>
+  </header>
+  <main>
+    <aside class="explorer" aria-label="Project explorer">
+      <label for="search">Find a folder, file or symbol</label>
+      <input id="search" type="search" placeholder="Search this codebase…" autocomplete="off">
+      <div class="section-title"><span id="treeLabel">PROJECT STRUCTURE</span><button id="collapse" title="Collapse all folders">Collapse</button></div>
+      <nav id="tree" aria-label="Files and symbols"></nav>
+      <div class="explorer-footer">Source analysis · project files unchanged</div>
+    </aside>
+    <section class="workspace" aria-label="Graph">
+      <div class="toolbar">
+        <label>Presentation <select id="presentation"></select></label>
+        <label id="relationControl">Relationships <select id="relation"></select></label>
+        <label id="statusControl">Status <select id="status"></select></label>
+        <label id="externalControl" class="check"><input id="external" type="checkbox" checked> External / unresolved</label>
+      </div>
+      <div id="coverage" class="coverage" aria-label="Analysis coverage"></div>
+      <div class="breadcrumb" id="breadcrumb"></div>
+      <div id="notice" class="notice" role="status" aria-live="polite">Loading analysis…</div>
+      <div class="graph-scroll" id="graphScroll"><svg id="graph" role="group" aria-label="Focused relationship graph"></svg></div>
+      <div class="graph-footer"><span id="graphHint">Select a node to explore its relationships.</span><div><button id="zoomOut" aria-label="Zoom out">−</button><button id="fit">Fit</button><button id="zoomIn" aria-label="Zoom in">+</button></div></div>
+      <details class="diagnostics"><summary id="diagnosticSummary">Analysis diagnostics</summary><div id="diagnostics"></div></details>
+    </section>
+    <aside class="inspector" aria-label="Selection details">
+      <span class="eyebrow">SELECTED NODE</span><h1 id="selectedName">—</h1><span id="selectedKind" class="badge"></span><p id="selectedPath"></p>
+      <p id="selectionHelp"></p><h2>Relationships</h2><p id="relationshipCount"></p><div id="relationships"></div>
+    </aside>
+  </main>
+</body>
+</html>

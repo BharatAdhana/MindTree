@@ -1,5 +1,11 @@
 #!/usr/bin/env node
 
+if (process.argv.length > 2) {
+  require('../lib/cli/run').run(process.argv.slice(2)).catch(error => {
+    console.error(`MindTree: ${error.message}`);
+    process.exitCode = 1;
+  });
+} else {
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -79,3 +85,4 @@ server.listen(PORT, () => {
     }
   });
 });
+}
